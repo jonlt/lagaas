@@ -7,11 +7,14 @@ lib-cov
 *.pid
 *.gz
 
+
 pids
 logs
 results
 
 node_modules
 npm-debug.log
+
 .vscode
 typings
+tsd.json
