@@ -40,7 +40,9 @@ var server = http.createServer(function(req, res){
     }    
 });
 
-server.listen(80, function(){
+var port = process.env.PORT;
+
+server.listen(port, function(){
     console.info("started!");
     setInterval(handleNextReq, 20);
 });
