@@ -1,70 +1,96 @@
 var http = require('http');
-var AVLTree = require('binary-search-tree').AVLTree;
+var fs = require('fs');
 
-var waitingResponses = new AVLTree();
+var routeRegex = new RegExp("/([0-9]+)(/.*)?$");
 
-var server = http.createServer(function(req, res){
-    
-    if(req.method === "OPTIONS"){
-        res.statusCode = 200;
-        res.end("lagaas.com/:lag_in_ms");
-        return;
-    }
-    
+var waitingResponses = [];
+
+
+function route(req, res){
     if(req.url === "/"){
-        return renderLanding(res); 
-    }
-    
-    var atime, // add time
-        ctime, // current time
-        rtime; // respond at time
-    
-    ctime = (new Date()).getTime();
-    atime = parseInt(req.url.substr(1, req.url.length - 1)) || -1;
-
-    if(atime < 0) {
-        res.statusCode = 400;
-        res.end("nan")
+        serveFile(res, "index.html");
     } else {
-        rtime = ctime + atime;
-
-        var entry = {
-            "client": req.connection.remoteAddress,
-            "res": res,
-            "rtime": rtime,
-            "ctime": ctime
-        };
-        
-        waitingResponses.insert(rtime, entry);
-    }    
-});
-
-server.listen(80, function(){
-    console.info("started!");
-    setInterval(handleNextReq, 20);
-});
-
-function handleNextReq(){
-    var ctime = (new Date()).getTime();
-    var resToHandle = waitingResponses.betweenBounds({ $lt: ctime });
-    if(resToHandle && resToHandle.length > 0){
-        for(var ires in resToHandle){
-            var entry = resToHandle[ires];
-            
-            entry.res.setHeader('content-type', 'text/plain');
-            entry.res.end((ctime - entry.ctime).toString());
-        }         
+        handle(res, req);
     }
 }
 
-function renderLanding(res){
-    var html = "<!DOCTYPE html>\
-<html><body><h1>Lag as a Service</h1>\
-<p>use it like this: <code>lagaas.com/{lag_time_in_ms}</code> to get your organic, gluten-free lag straight from the server farm.</p>\
-<p>EX: <code>lagaas.com/1000</code> for a <em>whole</em> second of free fresh lag.</p>\
-</body></html>\
-";
-    res.setHeader('content-type', 'text/html');
-    res.statusCode = 200;
-    res.end(html);
+function handle(res, req){
+    var decoded = decodeURI(req.url);
+    var result = routeRegex.exec(decoded);
+    if(result == null){
+        res.statusCode = 400;
+        serveFile(res, "bad_request.html");        
+    } else {
+        var atime = parseInt(result[1]),
+            redirect = result[2],
+            ctime = (new Date()).getTime();
+
+        if(redirect){
+            redirect = redirect.substring(1, redirect.length);
+        }
+
+        if(atime === null || atime < 0) {
+            res.statusCode = 400;
+            serveFile(res, "bad_request.html");
+        } else {
+            var rtime = ctime + atime;
+    
+            var entry = {
+                "client": req.connection.remoteAddress,
+                "res": res,
+                "rtime": rtime,
+                "ctime": ctime,
+                "redirect": redirect,
+                "active": true
+            };
+            
+            req.on("close", function(){
+                entry.active = false;
+            });
+            
+            waitingResponses.push(entry);
+        }
+    }    
+}
+
+function serveFile(res, filename){
+    var fileStream = fs.createReadStream(filename);
+    fileStream.pipe(res);
+}
+
+var server = http.createServer(route);
+var port = process.env.PORT || 8080; 
+server.listen(port, function(){
+    console.info("started!");
+    findNextResponse();
+});
+
+function findNextResponse(){
+    var ctime = (new Date()).getTime();
+    
+    var inactive = [];
+    
+    for(var i in waitingResponses){
+        var current = waitingResponses[i];
+        if(!current.active){
+            inactive.push(i);
+        }
+        if(current.rtime < ctime){
+            inactive.push(i)
+            if(current.redirect){
+                current.res.statusCode = "302"
+                current.res.setHeader("Location", current.redirect);
+                current.res.end();
+            } else {
+                current.res.setHeader('content-type', 'text/plain');
+                current.res.end((ctime - current.ctime).toString());
+            }
+        }
+    }
+    
+    for(var i in inactive){
+        waitingResponses.splice(i, 1);
+    }
+    
+    setTimeout(findNextResponse, 20);
 }
