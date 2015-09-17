@@ -3,6 +3,7 @@ var AVLTree = require('binary-search-tree').AVLTree;
 
 var waitingResponses = new AVLTree();
 
+
 var server = http.createServer(function(req, res){
     
     if(req.method === "OPTIONS"){
