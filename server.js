@@ -17,12 +17,16 @@ function badRequest(res){
 
 function handle(req, res){
     
-    var result = urlRegex.exec(url.parse(req.url).pathname),
-        atime = parseInt(result[1]),
+    var result = urlRegex.exec(url.parse(req.url).pathname);
+    if (!result || result == null) {
+        return badRequest(res);
+    }
+    
+    var atime = parseInt(result[1]),
         ctime = (new Date()).getTime(),
         redirect;
         
-    if(!result || atime === null || atime < 0){
+    if(atime === null || atime < 0){
         return badRequest(res);
     }
         
