@@ -3,6 +3,7 @@ var AVLTree = require('binary-search-tree').AVLTree;
 
 var waitingResponses = new AVLTree();
 
+
 var server = http.createServer(function(req, res){
     
     if(req.method === "OPTIONS"){
@@ -39,7 +40,9 @@ var server = http.createServer(function(req, res){
     }    
 });
 
-server.listen(80, function(){
+var port = process.env.PORT;
+
+server.listen(port, function(){
     console.info("started!");
     setInterval(handleNextReq, 20);
 });
