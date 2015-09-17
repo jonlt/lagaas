@@ -1,96 +1,81 @@
+"use strict";
 var http = require('http');
 var fs = require('fs');
+var url = require('url');
 
-var routeRegex = new RegExp("/([0-9]+)(/.*)?$");
-
-var waitingResponses = [];
-
-
-function route(req, res){
-    if(req.url === "/"){
-        serveFile(res, "index.html");
-    } else {
-        handle(res, req);
-    }
-}
-
-function handle(res, req){
-    var decoded = decodeURI(req.url);
-    var result = routeRegex.exec(decoded);
-    if(result == null){
-        res.statusCode = 400;
-        serveFile(res, "bad_request.html");        
-    } else {
-        var atime = parseInt(result[1]),
-            redirect = result[2],
-            ctime = (new Date()).getTime();
-
-        if(redirect){
-            redirect = redirect.substring(1, redirect.length);
-        }
-
-        if(atime === null || atime < 0) {
-            res.statusCode = 400;
-            serveFile(res, "bad_request.html");
-        } else {
-            var rtime = ctime + atime;
-    
-            var entry = {
-                "client": req.connection.remoteAddress,
-                "res": res,
-                "rtime": rtime,
-                "ctime": ctime,
-                "redirect": redirect,
-                "active": true
-            };
-            
-            req.on("close", function(){
-                entry.active = false;
-            });
-            
-            waitingResponses.push(entry);
-        }
-    }    
-}
+var urlRegex = new RegExp("/([0-9]+)(/(.*))?");
 
 function serveFile(res, filename){
     var fileStream = fs.createReadStream(filename);
-    fileStream.pipe(res);
+    fileStream.pipe(res); 
 }
 
-var server = http.createServer(route);
+function badRequest(res){
+    res.statusCode = 400;
+    serveFile(res, "bad_request.html");    
+}
+
+function handle(req, res){
+    
+    var result = urlRegex.exec(url.parse(req.url).pathname),
+        atime = parseInt(result[1]),
+        ctime = (new Date()).getTime(),
+        redirect;
+        
+    if(!result || atime === null || atime < 0){
+        return badRequest(res);
+    }
+        
+    if(result[3]){
+        redirect = decodeURI(result[3]);
+        try {
+            var redirectUrl = url.parse(redirect);
+            if(!redirectUrl.protocol) {
+                redirect = "http://" + redirect;
+            }
+        } catch (e) {
+            return badRequest(res);
+        }
+    }
+       
+    var resEvent = setTimeout(function(){
+        if(redirect){
+            res.statusCode = "302"
+            res.setHeader("Location", redirect);
+            res.end();
+        } else {
+            var rtime = (new Date()).getTime();
+            var lag = rtime - ctime;
+            res.setHeader('content-type', 'text/plain');
+            res.end(lag.toString());
+        }                
+    }, atime);
+    
+    req.on("close", function(){
+        clearTimeout(resEvent);
+    });
+}
+
+
+var server = http.createServer(function(req,res){
+    if(req.url === "/"){
+        serveFile(res, "index.html");
+    } else if(req.url === "/how") {
+        serveFile(res, "how.html");
+    } else if(req.url === "/why") {
+        serveFile(res, "why.html");
+    } else if(req.url === "/contact") {
+        serveFile(res, "contact.html");
+    } else if(req.url === "/style.css") {
+        serveFile(res, "style.css");
+    } else if(req.url === "/favicon.ico") {
+        serveFile(res, "favicon.ico");
+    } else {
+        handle(req, res);
+    }    
+});
+
 var port = process.env.PORT || 8080; 
 server.listen(port, function(){
     console.info("started!");
-    findNextResponse();
 });
-
-function findNextResponse(){
-    var ctime = (new Date()).getTime();
-    
-    var inactive = [];
-    
-    for(var i in waitingResponses){
-        var current = waitingResponses[i];
-        if(!current.active){
-            inactive.push(i);
-        }
-        if(current.rtime < ctime){
-            inactive.push(i)
-            if(current.redirect){
-                current.res.statusCode = "302"
-                current.res.setHeader("Location", current.redirect);
-                current.res.end();
-            } else {
-                current.res.setHeader('content-type', 'text/plain');
-                current.res.end((ctime - current.ctime).toString());
-            }
-        }
-    }
-    
-    for(var i in inactive){
-        waitingResponses.splice(i, 1);
-    }
-    
-    setTimeout(findNextResponse, 20);
-}

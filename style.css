@@ -1,0 +1,56 @@
+body {
+    font-family: sans-serif;
+    color: #555;
+    margin:0;
+}
+p {
+    margin:0;
+}
+ul a {
+    font-size: 12px;
+}
+a {
+    text-decoration: none;
+}
+a:link {
+    color: #555;
+}
+a:visited {
+    color: #666;
+}            
+a:hover {
+    color: #222;
+}
+a:active {
+    color: #555;
+}
+.tagline {
+    font-size: 11px;
+}
+.header {
+    width: 100%;
+    background-color: #eee;
+    padding: 20px 0 20px 10px;
+    margin-bottom: 2em;
+}
+.header h1 {
+    margin:0;
+}
+.header ul {
+    list-style-type:none;
+    padding:0;                
+    float:right;
+    margin:0;
+}
+.header li {
+    display: inline;
+    margin-right:15px;
+}
+.center {
+    text-align: center;
+    width:100%;
+    font-size:16px;
+}
+.content {
+    margin: 20px;
+}
