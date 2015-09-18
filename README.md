@@ -24,6 +24,3 @@ will not work, because the url contains a `:`, skip the `http://` part and you s
 The file `stats.js` file is about logging some stats to a azure db, just pull it out if you don't need that.
 
 Don't worry about `db_keys.json`, its just for making local testing easier.
-
-
-
