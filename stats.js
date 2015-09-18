@@ -15,6 +15,7 @@ fs.exists("./db_keys.json", function(exists){
         dbClient = new DocumentDBClient(db_keys.db_uri, {masterKey: db_keys.db_primary_key});
         loadDb();
     } else {
+        dbClient = new DocumentDBClient(db_keys.db_uri, {masterKey: db_keys.db_primary_key});
         loadDb();
     }
 })
