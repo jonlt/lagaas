@@ -15,7 +15,7 @@ One second of lag followed by a redirect to google:
     
 ## Misc
 
-Azure websites don't play well with `:` or even the encoded `%3A` in the path, so 
+I couldn't make the Azure website play well with `:` or even the encoded `%3A` in the path, so 
 
 `lagaas.com/1000/http://www.google.com` 
 
