@@ -7,7 +7,7 @@ var log = require('./stats.js');
 var urlRegex = new RegExp("/([0-9]+)(/(.*))?");
 
 function serveFile(res, filename){
-    var fileStream = fs.createReadStream(filename);
+    var fileStream = fs.createReadStream("./static/" + filename);
     fileStream.pipe(res); 
 }
 

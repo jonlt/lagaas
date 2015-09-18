@@ -6,7 +6,7 @@ var dbClient = null,
 
 var db_keys = {
     "db_uri": process.env.db_uri,
-    "db_primary_key": process.env.db_primary_key
+    "db_primary_key": process.env.db_primary_key, 
 }
 
 fs.exists("./db_keys.json", function(exists){
@@ -20,32 +20,28 @@ fs.exists("./db_keys.json", function(exists){
 })
 
 function loadDb(){
-    getDb(dbClient, "log", function(err, db){
-        getCollection(dbClient, db._self, "requests", function(err, collection){
-            logDbCollection = collection; 
-        });  
-    });    
+    getDb(dbClient, "log", function(db){
+        getCollection(dbClient, db._self, "requests", function(col){
+            logDbCollection = col;
+        });
+    });
 }
 
 function convertToLogEntry(req){
     return {
         timestamp: (new Date()).getTime(),
         url: req.url,
-        ip: req.client.remoteAddress
+        ip: req.client.remoteAddress,
     };
 }
 
 exports.logRequest = function(req){
-    if(logDbCollection == null){
-        return;
-    } else {
-        var item = convertToLogEntry(req);
-        dbClient.createDocument(logDbCollection._self, item, function(err, doc){
-            if(err){
-                console.log(err);
-            }
-        });
-    }
+    var item = convertToLogEntry(req);
+    dbClient.createDocument(logDbCollection._self, item, function(err, doc){
+        if(err){
+            console.log(err);
+        }
+    });
 }
 
 
@@ -63,9 +59,8 @@ function getDb(client, dbName, cb){
     client.queryDatabases(querySpec).toArray(function (err, results) {
         if (err) {
             console.log(err);
-            cb(err);
         } else {
-            cb(null, results[0]);
+            cb(results[0]);
         }
     });
 }
@@ -82,9 +77,8 @@ function getCollection(client, dblink, collectionName, cb){
     client.queryCollections(dblink, querySpec).toArray(function (err, results) {
         if (err) {
             console.log(err);            
-            cb(err);
         } else {
-            cb(null, results[0]);
+            cb(results[0]);
         }
     });
 }
