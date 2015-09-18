@@ -29,10 +29,11 @@ function loadDb(){
 }
 
 function convertToLogEntry(req){
+    var xff = req.headers['x-forwarded-for'];
     return {
         timestamp: (new Date()).getTime(),
         url: req.url,
-        ip: req.client.remoteAddress,
+        ip: xff,
     };
 }
 
