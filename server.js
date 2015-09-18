@@ -2,8 +2,29 @@
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
+var DocumentDBClient = require('documentdb').DocumentClient;
+
+
+var db_keys = {
+    "db_uri": process.env.db_uri,
+    "db_primary_key": process.env.db_uri
+}
+
+fs.exists("db_keys.json", function(exists){
+    if(exists){
+        db_keys = require('./db_keys.json');
+    }
+})
+
+var db = new DocumentDBClient(db_keys.db_uri, db_keys.db_primary_key);
+
 
 var urlRegex = new RegExp("/([0-9]+)(/(.*))?");
+
+function logRequest(res){
+    db.createDocument("dbs/DBID/")    
+         
+}
 
 function serveFile(res, filename){
     var fileStream = fs.createReadStream(filename);

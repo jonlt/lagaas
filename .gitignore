@@ -18,3 +18,4 @@ npm-debug.log
 .vscode
 typings
 tsd.json
+db_keys.json
