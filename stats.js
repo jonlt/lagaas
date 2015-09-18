@@ -20,8 +20,8 @@ fs.exists("./db_keys.json", function(exists){
 })
 
 function loadDb(){
-    getDb(dbClient, function(err, db){
-        getCollection(dbClient, db._self, function(err, collection){
+    getDb(dbClient, "log", function(err, db){
+        getCollection(dbClient, db._self, "requests", function(err, collection){
             logDbCollection = collection; 
         });  
     });    
@@ -40,7 +40,7 @@ exports.logRequest = function(req){
         return;
     } else {
         var item = convertToLogEntry(req);
-        dbClient.createDocument(logDbCollection._self, req, function(err, doc){
+        dbClient.createDocument(logDbCollection._self, item, function(err, doc){
             if(err){
                 console.log(err);
             }
@@ -51,12 +51,12 @@ exports.logRequest = function(req){
 
 // this is how the "docs" tells me to get a database collection:
 
-function getDb(client, cb){
+function getDb(client, dbName, cb){
     var querySpec = {
         query: 'SELECT * FROM root r WHERE r.id=@id',
         parameters: [{
             name: '@id',
-            value: "log"
+            value: dbName
         }]
     };
     
@@ -70,12 +70,12 @@ function getDb(client, cb){
     });
 }
 
-function getCollection(client, dblink, cb){
+function getCollection(client, dblink, collectionName, cb){
     var querySpec = {
         query: 'SELECT * FROM root r WHERE r.id=@id',
         parameters: [{
             name: '@id',
-            value: "requests"
+            value: collectionName
         }]
     };
     
