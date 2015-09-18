@@ -1,0 +1,17 @@
+{
+  "name": "lagaas.com",
+  "version": "0.2.0",
+  "description": "lag as a service",
+  "main": "server.js",
+  "dependencies": {
+    "async": "^1.4.2",
+    "documentdb": "^1.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "jlt",
+  "license": "MIT"
+}
